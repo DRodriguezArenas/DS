@@ -1,0 +1,101 @@
+N-body simulation - Part 2. Respostes a les preguntes de les transparències #12 i #20
+==================================================================================
+
+---------------------------------------------------------------
+Transparència #12 - Mètodes d'integració
+---------------------------------------------------------------
+
+1. Què fa un integrador, en una frase?
+   Donat l'estat actual de l'univers (posicions, velocitats, acceleracions i masses
+   dels cossos), avança aquest estat un pas de temps dt, calculant i assignant les
+   noves posicions i velocitats de tots els cossos alhora.
+
+2. Quines dades tenen en comú?
+   El pas de temps (timeStep = dt). Per això Integrator és una classe abstracta
+   (i no només una interfície) que guarda el timeStep i ofereix getTimeStep(); cada
+   subclasse (Euler, LeapFrog) només implementa el mètode abstracte move(Universe).
+   L'acceleració de cada cos, que només necessita el LeapFrog, no és una dada de
+   l'integrador sinó de l'estat del cos, i per això s'ha afegit a Body (atribut a).
+
+3. Qui ha de crear un integrador?
+   Main. És qui llegeix els arguments d'execució i, per tant, té la informació
+   necessària per decidir quin integrador i amb quin dt (patró GRASP Creator:
+   té les dades d'inicialització). NBodySimulator no el crea: el rep al constructor
+   (injecció de dependències), així no depèn de cap integrador concret.
+
+4. Qui el necessita?
+   NBodySimulator el guarda i, a cada iteració, crida universe.update(integrator),
+   que delega a integrator.move(this). També el necessita per saber el dt
+   (getTimeStep()) quan fa una simulació acotada simulate(initTime, endTime).
+   Universe ja no sap COM es mouen els cossos (abans ho feia amb Body.move);
+   ara només ofereix computeForceOn(i) i getters/setters per índex, de manera que
+   els integradors depenen de Universe però no de Body.
+
+5. Com s'afegeix un nou integrador (Yoshida, Runge-Kutta...)?
+   Es crea una nova subclasse d'Integrator (p.ex. RungeKutta extends Integrator)
+   que implementi move(Universe). La resta de classes (Universe, NBodySimulator,
+   Body, plotters) no canvien; només cal afegir un "case" a Main per poder-lo
+   seleccionar des dels arguments.
+
+   Principis aplicats: Open/Closed (obert a extensió, tancat a modificació),
+   Polimorfisme (GRASP), Protected Variations (la variació "mètode d'integració"
+   queda amagada darrere Integrator), Strategy (l'algorisme es pot intercanviar
+   en temps d'execució), Dependency Inversion i SRP.
+
+---------------------------------------------------------------
+Transparència #20 - Plotters (simulació online / offline)
+---------------------------------------------------------------
+
+1. Quants plotters tenim? Què tenen en comú?
+   Dos: Online (dibuixa a la pantalla amb StdDraw) i Offline (escriu les
+   posicions a un fitxer de text per dibuixar-les després, p.ex. amb Python).
+   Els dos fan el mateix: "dibuixar" les posicions dels cossos a cada pas, però
+   de manera diferent. Tenen en comú les operacions start(), draw(Vector[]) i
+   stop(), però no comparteixen cap dada, per això Plotter és una interfície.
+   draw() rep un array de posicions (Vector[]) i no l'Universe ni una llista de
+   Body, per no crear dependències noves: els plotters no coneixen el model.
+
+2. Què va dins de start() i stop()?
+   - Online.start(): crear i configurar el canvas (doble buffer, escala segons el
+     radi de l'univers, gruix del punt).
+     Online.stop(): res (la finestra es queda oberta).
+   - Offline.start(): obrir el fitxer (PrintWriter) i escriure a la primera línia
+     el nombre de cossos.
+     Offline.stop(): tancar el fitxer (sense close() el fitxer pot quedar
+     incomplet, perquè el buffer no s'ha bolcat a disc).
+   NBodySimulator crida start() abans del bucle de simulació i stop() quan acaba.
+   Per això en offline s'usa simulate(initTime, endTime), que és acotada; la
+   simulació online és infinita i no arriba mai a stop().
+
+3. Qui instancia un plotter? I un integrador?
+   Tots dos els crea Main, a partir dels arguments d'execució (Creator: té la
+   informació necessària, com el nom del fitxer, el pauseTime, el trace, el dt...).
+   El plotter Online necessita el radi de l'univers i l'Offline el nombre de
+   cossos, per això Main els crea després de l'univers.
+
+4. Qui el necessita?
+   NBodySimulator, que el rep al constructor i només coneix la interfície Plotter.
+   Hem tret de NBodySimulator tot el codi de dibuix (createCanvas, drawBodies,
+   trace, pauseTime), que ara és a Online. Així NBodySimulator només coordina:
+   plotter.draw(posicions) -> universe.update(integrator) a cada pas.
+
+5. Com s'afegeix un nou tipus de plotter (JSON, buffer per a un altre procés,
+   online amb GPU...)?
+   Creant una nova classe que implementi Plotter (start, draw, stop). No cal
+   modificar NBodySimulator ni cap altra classe, només afegir la opció a Main
+   per poder-la seleccionar. Mateixos principis que abans: Open/Closed,
+   Polimorfisme, Protected Variations, Strategy, SRP i Dependency Inversion.
+
+---------------------------------------------------------------
+Com executar-ho (des de la carpeta nbody1)
+---------------------------------------------------------------
+Arguments: <dt> <euler|leapfrog> <online|offline> <args plotter> <configuracio> <args>
+  online  <pauseTime> <trace|notrace>
+  offline <fitxer sortida> <temps final>
+
+Exemples:
+  1000 leapfrog online 0 trace file data/3body.txt
+  10 euler online 0 trace central 10 0.5
+  10 leapfrog online 0 notrace nplus1 20
+  0.01 leapfrog online 10 trace choreography 1
+  0.001 leapfrog offline choreography.txt 20 choreography 1

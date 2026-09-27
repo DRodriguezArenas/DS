@@ -21,12 +21,6 @@ public class Body {
         this.G = g;
     }
 
-    public void move(Vector f, double dt) {
-        Vector acc = f.scale(1 / mass);
-        v = v.plus(acc.scale(dt));
-        r = r.plus(v.scale(dt));
-    }
-
     public Vector forceFrom(Body b) {
         Vector delta = b.r.minus(this.r);
         double dist = delta.magnitude();

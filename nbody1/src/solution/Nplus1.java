@@ -1,5 +1,7 @@
 package solution;
 
+import solution.util.Vector;
+
 public class Nplus1 extends Universe{
     private double randomBetween(double a, double b) {
         return a + Math.random() * (b - a);

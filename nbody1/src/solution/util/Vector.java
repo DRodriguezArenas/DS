@@ -1,4 +1,4 @@
-package solution;
+package solution.util;
 
 /******************************************************************************
  *  Compilation:  javac solution.Vector.java

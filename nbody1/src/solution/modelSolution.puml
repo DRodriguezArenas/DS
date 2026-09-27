@@ -2,13 +2,33 @@
 
 skinparam classAttributeIconSize 0
 
+package solution {
+
+class Main {
+{static} + main(args : String[]) : void
+}
+
+class NBodySimulator {
++ NBodySimulator(universe : Universe, plotter : Plotter, integrator : Integrator)
++ simulate() : void
++ simulate(initTime : double, endTime : double) : void
+}
+
 abstract class Universe {
-#numBodies : int
-#radius : double
+# numBodies : int
+# radius : double
 + getRadius() : double
 + getNumBodies() : int
++ computeForceOn(i : int) : Vector
++ update(integrator : Integrator) : void
++ getAllBodiesPosition() : Vector[]
++ getBodyMass(i : int) : double
 + getBodyPosition(i : int) : Vector
-+ update(dt : double) : void
++ getBodyVelocity(i : int) : Vector
++ getBodyAcceleration(i : int) : Vector
++ setBodyPosition(i : int, pos : Vector) : void
++ setBodyVelocity(i : int, vel : Vector) : void
++ setBodyAcceleration(i : int, acc : Vector) : void
 }
 
 class CentralConfiguration {
@@ -30,36 +50,86 @@ class Nplus1 {
 class Body {
 - r : Vector
 - v : Vector
+- a : Vector
 - mass : double
 - G : double
 + Body(r : Vector, v : Vector, mass : double)
 + Body(r : Vector, v : Vector, mass : double, g : double)
-+ move(f : Vector, dt : double) : void
 + forceFrom(b : Body) : Vector
 + getPosition() : Vector
-+ toString() : String
++ getVelocity() : Vector
++ getAcceleration() : Vector
++ getMass() : double
++ setPosition(r : Vector) : void
++ setVelocity(v : Vector) : void
++ setAcceleration(a : Vector) : void
+}
 }
 
-class NBodySimulator {
-- timeStep : double
-- pauseTime : int
+package solution.integrators {
+
+abstract class Integrator {
+# timeStep : double
++ Integrator(timeStep : double)
++ getTimeStep() : double
++ {abstract} move(universe : Universe) : void
+}
+
+class Euler {
++ Euler(timeStep : double)
++ move(universe : Universe) : void
+}
+
+class LeapFrog {
++ LeapFrog(timeStep : double)
++ move(universe : Universe) : void
+}
+}
+
+package solution.plotters {
+
+interface Plotter {
++ start() : void
++ draw(bodiesPosition : Vector[]) : void
++ stop() : void
+}
+
+class Online {
 - trace : boolean
-+ NBodySimulator(universe : Universe, dt : double, pt : int, doTrace : boolean)
-+ simulate() : void
+- radius : double
+- pauseTime : int
++ Online(trace : boolean, radius : double, pauseTime : int)
+- createCanvas() : void
+- drawBodies(bodiesPosition : Vector[]) : void
 }
 
-class Main {
-{static} + main(args : String[]) : void
+class Offline {
+- fname : String
+- numBodies : int
+- printWriter : PrintWriter
++ Offline(fname : String, numBodies : int)
+}
 }
 
 Universe <|-- CentralConfiguration
 Universe <|-- Choreography
 Universe <|-- ConfigurationFromFile
 Universe <|-- Nplus1
-
 Universe "1" *-> "1..*" Body : bodies
-NBodySimulator "1" -> "1" Universe : universe
-Main ..> Universe
-Main ..> NBodySimulator
+
+Integrator <|-- Euler
+Integrator <|-- LeapFrog
+Plotter <|.. Online
+Plotter <|.. Offline
+
+NBodySimulator "1" --> "1" Universe : universe
+NBodySimulator "1" --> "1" Integrator : integrator
+NBodySimulator "1" --> "1" Plotter : plotter
+Integrator ..> Universe : move()
+
+Main ..> Universe : <<create>>
+Main ..> Integrator : <<create>>
+Main ..> Plotter : <<create>>
+Main ..> NBodySimulator : <<create>>
 
 @enduml

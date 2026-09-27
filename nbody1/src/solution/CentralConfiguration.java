@@ -1,5 +1,7 @@
 package solution;
 
+import solution.util.Vector;
+
 public class CentralConfiguration extends Universe{
     public CentralConfiguration(int numBodies, double angleVelPos) {
         final double RADIUS = 1e11;

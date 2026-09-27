@@ -1,0 +1,57 @@
+i. Which GRASP patterns / design principles are we applying in doing the refactoring?
+
+-SRP (Single Responsibility): Cada classe té un sol paper ben definit: Vector fa càlculs, Body porta la física d'un cos, Universe gestiona l'estat global i NBodySimulator la visualització.
+
+-Program to an interface: El simulador depèn de l'abstracció Universe i no de les configuracions concretes, fent el codi adaptable a canvis.
+
+-LSP (Liskov Substitution): Qualsevol subclasse (Choreography, Nplus1, etc.) pot substituir la classe base Universe al simulador sense trencar res.
+
+-DRY (Don’t Repeat Yourself): Reutilitzem tot el codi comú (bodies, update(), etc.) posant-lo a Universe per no repetir-lo a cada configuració.
+
+-Information Hiding: Protegim les dades fent els atributs privats o protegits, evitant que classes externes modifiquin l'estat intern directament.
+
+ii. What are the pros and cons of each one ?
+
+-Constructors múltiples a Universe: Amb aquesta opció Universe tindria un constructor per a cada configuració. Tot i que és una opció relativamente més rápida de implementar porta molts problemas. El principal és que la classe Universe passaria a ser exageradament gran i a més faria masses coses, no seria una classe simple. A més si decidim implementar més configuracións en un futur, aquesta classe encara es faria més gran.
+
+Pros: 
+Tot el que té a veure en construir Universe en un mateix lloc.
+
+Cons:
+Universe acumula massa responsabilitats.
+Cada vegada que volem afegir una configuració nova haurem de modificar Universe i aquesta és farà més i més gran.
+
+-Universe abstracta amb subclases: En aquest cas cada configuració és una subclasse, on cada una hereta de Universe i implementa el seu propi constructor. D'aquesta manera totes les classes es manteneixen amb una mida acceptable i cap d'aquestes es complicaría massa. Tot i sembla la solución correcta no és la millor, ja que l'únic que canvia de cada subclasse és el constructor, tot l'altre és el mateix. És una herència una mica forçada.
+
+Pros:
+Bona cohesió, ja que cada subclasse conteneix el seu constructor.
+Al afegir una nova configuració no farà falta retocar res existent, simplement crear una nova subclasse
+
+Cons:
+Opció poc òptima perquè les subclases només es diferencien amb el constructor, és a dir no és una herència neta.
+Cada vegada que volem afegir una configuració nova haurem d'afegir una subclasse nova, al final hi haurà masses classes.
+
+
+-UniverseFactory amb un mètode per configuració: En aquesta opció creem una classe nova ña qual será la que construira cada tipus d'Univers i el constructor de la classe Univers passarà a ser un constructor que simplement emplena els atributs per així dir-ho. Això és el patró GRASP Pure Fabrication. Amb aquesta opció Universe és manteneix lleugera i alhora d'afegir una nova configuració només fa falta retocar aquesta classe, que està fora del funcionament general del codi.
+
+Pros:
+Universe es manteneix simple, tots el mètodes de construcción queden a carrec de la nova classe.
+Per afegir un mètode nou no fa falta tocar res existent, simplement afegir un mètode nou a la nova classe.
+
+Cons:
+La classe factoria pot acabar sent molt gran si afegim masses configuracions.
+
+What do you think is best according to the design principles ?
+
+La millor opció és la tercera, ja que fa la que deixa cada classe fer lo que ha de fer i ja, la classe Universe actualitza en el temps el conjunt de cossos i la factoria crea els tipus diferents d'universos. 
+
+
+iii. How have you designed the extension of special configurations?
+
+L'extensió s'ha dissenyat convertint Universe en una classe abstracta i creant subclasses per a cada configuració especial (Choreography, Nplus1, CentralConfiguration i ConfigurationFromFile):
+
+Classe base Universe: Manté tot el codi i dades comunes (l'array de cossos, el radi de l'espai i la lògica per actualitzar la simulació).
+
+Subclasses només amb constructor: Cada configuració és una subclassa de Universe que només conté el seu constructor específic. Dins d'aquest constructor es calculen o es llegeixen les posicions, velocitats i masses inicials per omplir l'array de cossos.
+
+Simplicitat i extensió: Les subclasses no han de reescriure cap mètode de simulació, només inicialitzar les dades. El simulador (NBodySimulator) només sap que rep un Universe, per la qual cosa pot executar qualsevol configuració sense haver de canviar el seu codi.

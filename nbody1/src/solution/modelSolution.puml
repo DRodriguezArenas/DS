@@ -1,0 +1,65 @@
+@startuml
+
+skinparam classAttributeIconSize 0
+
+abstract class Universe {
+#numBodies : int
+#radius : double
++ getRadius() : double
++ getNumBodies() : int
++ getBodyPosition(i : int) : Vector
++ update(dt : double) : void
+}
+
+class CentralConfiguration {
++ CentralConfiguration(numBodies : int, angleVelPos : double)
+}
+
+class Choreography {
++ Choreography(nchoreography : int)
+}
+
+class ConfigurationFromFile {
++ ConfigurationFromFile(fname : String)
+}
+
+class Nplus1 {
++ Nplus1(numPlanets : int)
+}
+
+class Body {
+- r : Vector
+- v : Vector
+- mass : double
+- G : double
++ Body(r : Vector, v : Vector, mass : double)
++ Body(r : Vector, v : Vector, mass : double, g : double)
++ move(f : Vector, dt : double) : void
++ forceFrom(b : Body) : Vector
++ getPosition() : Vector
++ toString() : String
+}
+
+class NBodySimulator {
+- timeStep : double
+- pauseTime : int
+- trace : boolean
++ NBodySimulator(universe : Universe, dt : double, pt : int, doTrace : boolean)
++ simulate() : void
+}
+
+class Main {
+{static} + main(args : String[]) : void
+}
+
+Universe <|-- CentralConfiguration
+Universe <|-- Choreography
+Universe <|-- ConfigurationFromFile
+Universe <|-- Nplus1
+
+Universe "1" *-> "1..*" Body : bodies
+NBodySimulator "1" -> "1" Universe : universe
+Main ..> Universe
+Main ..> NBodySimulator
+
+@enduml
